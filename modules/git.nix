@@ -49,8 +49,9 @@ in {
     '';
 
     programs.ssh.extraConfig = ''
-      Host *
+      Host github.com
         IdentityFile ${cfg.signingKey}
+	User git
     '';
   };
 }
