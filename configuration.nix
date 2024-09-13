@@ -8,5 +8,6 @@
     ./modules/podman.nix
     ./modules/packages.nix
     ./modules/packages.nix
+    ./modules/git.nix
   ];
 }
