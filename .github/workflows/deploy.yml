@@ -36,9 +36,9 @@ jobs:
           # Ensure we're in the repository root
           cd $GITHUB_WORKSPACE
 
-          # Copy deploy script to server
+          # Copy both scripts to server
           scp -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
-            .github/workflows/deploy-script.sh $SERVER_USER@$SERVER_IP:~/deploy-script.sh
+            .github/workflows/deploy-script.sh deploy.sh $SERVER_USER@$SERVER_IP:~/
 
           # Run deploy script on server
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
@@ -46,7 +46,7 @@ jobs:
 
           # Clean up
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
-            $SERVER_USER@$SERVER_IP "rm ~/deploy-script.sh"
+            $SERVER_USER@$SERVER_IP "rm ~/deploy-script.sh ~/deploy.sh"
 
       - name: Clean up
         if: always()
