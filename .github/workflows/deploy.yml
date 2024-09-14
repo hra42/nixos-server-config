@@ -42,19 +42,19 @@ jobs:
 
           # Copy both scripts to server
           scp -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
-            .github/workflows/deploy-script.sh deploy.sh $SERVER_USER@$SERVER_IP:~/
+            .github/workflows/deploy-script.sh deploy.sh $SERVER_USER@$SERVER_IP:/home/$SERVER_USER/
 
           # Set execute permissions for both scripts
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
-            $SERVER_USER@$SERVER_IP "chmod +x ~/deploy-script.sh ~/deploy.sh"
+            $SERVER_USER@$SERVER_IP "chmod +x /home/$SERVER_USER/deploy-script.sh /home/$SERVER_USER/deploy.sh"
 
           # Run deploy script on server
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
-            $SERVER_USER@$SERVER_IP "REPO_URL=$REPO_URL bash ~/deploy-script.sh"
+            $SERVER_USER@$SERVER_IP "REPO_URL=$REPO_URL bash /home/$SERVER_USER/deploy-script.sh"
 
           # Clean up
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
-            $SERVER_USER@$SERVER_IP "rm ~/deploy-script.sh ~/deploy.sh"
+            $SERVER_USER@$SERVER_IP "rm /home/$SERVER_USER/deploy-script.sh /home/$SERVER_USER/deploy.sh"
 
       - name: Clean up
         if: always()
