@@ -1,0 +1,51 @@
+name: Deploy NixOS Configuration
+
+on:
+  push:
+    branches:
+      - main  # or your default branch name
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+
+    - name: Deploy to NixOS Server
+      env:
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+        REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+      run: |
+        # Set up SSH key
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
+
+        # SSH into server, check/clone repo, pull latest changes, and run deploy script
+        ssh $SERVER_USER@$SERVER_IP << EOF
+          set -e
+          REPO_DIR=~/nixos-config
+
+          if [ -d "$REPO_DIR" ]; then
+            echo "Repository exists. Pulling latest changes..."
+            cd "$REPO_DIR"
+            git pull origin main
+          else
+            echo "Repository doesn't exist. Cloning..."
+            git clone $REPO_URL "$REPO_DIR"
+            cd "$REPO_DIR"
+          fi
+
+          # Ensure deploy script is executable
+          chmod +x deploy.sh
+
+          # Run deploy script
+          ./deploy.sh
+EOF
+
+        # Clean up
+        rm -f ~/.ssh/id_rsa
