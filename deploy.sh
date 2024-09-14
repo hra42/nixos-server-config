@@ -10,7 +10,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Define source and destination directories
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="/home/nixos/nixos-config"
 DEST_DIR="/etc/nixos"
 
 # Create modules directory if it doesn't exist

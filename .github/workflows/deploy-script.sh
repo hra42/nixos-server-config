@@ -3,7 +3,7 @@ set -e
 
 echo "Starting deployment script"
 
-REPO_DIR=~/nixos-config
+REPO_DIR=/home/nixos/nixos-config
 
 if [ -z "$REPO_URL" ]; then
   echo "Error: REPO_URL is not set"
