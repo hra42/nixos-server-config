@@ -24,6 +24,6 @@ echo "Ensuring deploy script is executable"
 chmod +x /home/nixos/deploy.sh
 
 echo "Running deploy script"
-bash /home/nixos/deploy.sh
+sudo bash /home/nixos/deploy.sh
 
 echo "Deployment complete"
