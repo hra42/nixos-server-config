@@ -28,6 +28,7 @@ jobs:
       - name: Add server to known hosts
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
           if ! ssh-keyscan -H $SERVER_IP >> $TEMP_DIR/.ssh/known_hosts 2>/dev/null; then
             echo "Failed to scan SSH host key. Debugging information:"
@@ -39,11 +40,20 @@ jobs:
             echo "Attempting to ping the server:"
             ping -c 4 $SERVER_IP
             echo "Attempting to connect to SSH port:"
-            nc -zv $SERVER_IP 22
+            if timeout 5 ssh -i $TEMP_DIR/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=5 $SERVER_USER@$SERVER_IP echo "SSH Port is open" 2>/dev/null; then
+              echo "SSH port is open and accessible"
+            else
+              echo "Failed to connect to SSH port"
+            fi
             exit 1
           else
             echo "Successfully added $SERVER_IP to known hosts"
           fi
+
+      - name: Check known_hosts file
+        run: |
+          echo "Contents of known_hosts file:"
+          cat $TEMP_DIR/.ssh/known_hosts
 
       - name: Check SSH connection
         env:
