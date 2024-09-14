@@ -28,7 +28,39 @@ jobs:
       - name: Add server to known hosts
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
-        run: ssh-keyscan -H $SERVER_IP >> $TEMP_DIR/.ssh/known_hosts
+        run: |
+          if ! ssh-keyscan -H $SERVER_IP >> $TEMP_DIR/.ssh/known_hosts 2>/dev/null; then
+            echo "Failed to scan SSH host key. Debugging information:"
+            echo "SERVER_IP: $SERVER_IP"
+            echo "TEMP_DIR: $TEMP_DIR"
+            echo "Current directory: $(pwd)"
+            echo "Contents of TEMP_DIR:"
+            ls -la $TEMP_DIR
+            echo "Attempting to ping the server:"
+            ping -c 4 $SERVER_IP
+            echo "Attempting to connect to SSH port:"
+            nc -zv $SERVER_IP 22
+            exit 1
+          else
+            echo "Successfully added $SERVER_IP to known hosts"
+          fi
+
+      - name: Check SSH connection
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          if ! ssh -i $TEMP_DIR/.ssh/id_rsa -o UserKnownHostsFile=$TEMP_DIR/.ssh/known_hosts -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "echo 'SSH connection successful'"; then
+            echo "Failed to establish SSH connection. Debugging information:"
+            echo "SERVER_IP: $SERVER_IP"
+            echo "SERVER_USER: $SERVER_USER"
+            echo "TEMP_DIR: $TEMP_DIR"
+            echo "SSH key permissions:"
+            ls -l $TEMP_DIR/.ssh/id_rsa
+            echo "Known hosts file contents:"
+            cat $TEMP_DIR/.ssh/known_hosts
+            exit 1
+          fi
 
       - name: Copy deploy script to server
         env:
