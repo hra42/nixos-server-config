@@ -9,9 +9,6 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v2
-
     - name: Deploy to NixOS Server
       env:
         SERVER_IP: ${{ secrets.SERVER_IP }}
@@ -26,7 +23,7 @@ jobs:
         ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
 
         # SSH into server, check/clone repo, pull latest changes, and run deploy script
-        ssh $SERVER_USER@$SERVER_IP << EOF
+        ssh $SERVER_USER@$SERVER_IP << 'EOF'
           set -e
           REPO_DIR=~/nixos-config
 
@@ -45,6 +42,9 @@ jobs:
 
           # Run deploy script
           ./deploy.sh
+
+          # Rebuild NixOS
+          sudo nixos-rebuild switch
 EOF
 
         # Clean up
