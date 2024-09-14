@@ -16,10 +16,11 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "StrictHostKeyChecking no" > ~/.ssh/config
+          TEMP_SSH_DIR=$(mktemp -d)
+          echo "$SSH_PRIVATE_KEY" > $TEMP_SSH_DIR/id_rsa
+          chmod 600 $TEMP_SSH_DIR/id_rsa
+          echo "StrictHostKeyChecking no" > $TEMP_SSH_DIR/config
+          echo "TEMP_SSH_DIR=$TEMP_SSH_DIR" >> $GITHUB_ENV
 
       - name: Deploy to NixOS Server
         env:
@@ -28,14 +29,17 @@ jobs:
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
         run: |
           # Copy deploy script to server
-          scp deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
+          scp -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
 
           # Run deploy script on server
-          ssh $SERVER_USER@$SERVER_IP "REPO_URL=$REPO_URL bash ~/deploy_script.sh"
+          ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            $SERVER_USER@$SERVER_IP "REPO_URL=$REPO_URL bash ~/deploy_script.sh"
 
           # Clean up
-          ssh $SERVER_USER@$SERVER_IP "rm ~/deploy_script.sh"
+          ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            $SERVER_USER@$SERVER_IP "rm ~/deploy_script.sh"
 
       - name: Clean up
         if: always()
-        run: rm -f ~/.ssh/id_rsa ~/.ssh/config
+        run: rm -rf $TEMP_SSH_DIR
