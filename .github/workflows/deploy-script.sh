@@ -21,9 +21,9 @@ else
 fi
 
 echo "Ensuring deploy script is executable"
-chmod +x ~/deploy.sh
+chmod +x /home/$SERVER_USER/deploy.sh
 
 echo "Running deploy script"
-~/deploy.sh
+bash /home/$SERVER_USER/deploy.sh
 
 echo "Deployment complete"
