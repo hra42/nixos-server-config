@@ -19,18 +19,27 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
         REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
       run: |
-        # Set up SSH key
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
-
+        # Create a temporary directory
+        TEMP_DIR=$(mktemp -d)
+        
+        # Set up SSH key in the temporary directory
+        mkdir -p $TEMP_DIR/.ssh
+        echo "$SSH_PRIVATE_KEY" > $TEMP_DIR/.ssh/id_rsa
+        chmod 600 $TEMP_DIR/.ssh/id_rsa
+        ssh-keyscan -H $SERVER_IP >> $TEMP_DIR/.ssh/known_hosts
+        
+        # Use the temporary SSH directory
+        export SSH_AUTH_SOCK=""
+        export GIT_SSH_COMMAND="ssh -i $TEMP_DIR/.ssh/id_rsa -o UserKnownHostsFile=$TEMP_DIR/.ssh/known_hosts"
+        
         # Copy deploy script to server
-        scp deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
-
+        scp -i $TEMP_DIR/.ssh/id_rsa .github/workflows/deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
+        
         # SSH into server and run deploy script
-        ssh $SERVER_USER@$SERVER_IP "bash ~/deploy_script.sh"
-
-        # Clean up
-        ssh $SERVER_USER@$SERVER_IP "rm ~/deploy_script.sh"
-        rm -f ~/.ssh/id_rsa
+        ssh -i $TEMP_DIR/.ssh/id_rsa $SERVER_USER@$SERVER_IP "bash ~/.github/workflows/deploy_script.sh"
+        
+        # Clean up on the server
+        ssh -i $TEMP_DIR/.ssh/id_rsa $SERVER_USER@$SERVER_IP "rm ~/.github/workflows/deploy_script.sh"
+        
+        # Clean up the temporary directory
+        rm -rf $TEMP_DIR
