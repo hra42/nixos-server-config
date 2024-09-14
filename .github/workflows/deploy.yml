@@ -36,9 +36,17 @@ jobs:
           # Ensure we're in the repository root
           cd $GITHUB_WORKSPACE
 
+          # Convert scripts to Unix format (in case they were edited on Windows)
+          dos2unix .github/workflows/deploy-script.sh
+          dos2unix deploy.sh
+
           # Copy both scripts to server
           scp -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
             .github/workflows/deploy-script.sh deploy.sh $SERVER_USER@$SERVER_IP:~/
+
+          # Set execute permissions for both scripts
+          ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            $SERVER_USER@$SERVER_IP "chmod +x ~/deploy-script.sh ~/deploy.sh"
 
           # Run deploy script on server
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
