@@ -3,43 +3,56 @@ name: Deploy NixOS Configuration
 on:
   push:
     branches:
-      - main  # or your default branch name
+      - main # or your default branch name
 
 jobs:
   deploy:
     runs-on: self-hosted
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v2
+      - name: Check out repository
+        uses: actions/checkout@v2
 
-    - name: Deploy to NixOS Server
-      env:
-        SERVER_IP: ${{ secrets.SERVER_IP }}
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
-        REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
-      run: |
-        # Create a temporary directory
-        TEMP_DIR=$(mktemp -d)
-        
-        # Set up SSH key in the temporary directory
-        mkdir -p $TEMP_DIR/.ssh
-        echo "$SSH_PRIVATE_KEY" > $TEMP_DIR/.ssh/id_rsa
-        chmod 600 $TEMP_DIR/.ssh/id_rsa
-        ssh-keyscan -H $SERVER_IP >> $TEMP_DIR/.ssh/known_hosts
-        
-        # Use the temporary SSH directory
-        export SSH_AUTH_SOCK=""
-        export GIT_SSH_COMMAND="ssh -i $TEMP_DIR/.ssh/id_rsa -o UserKnownHostsFile=$TEMP_DIR/.ssh/known_hosts"
-        
-        # Copy deploy script to server
-        scp -i $TEMP_DIR/.ssh/id_rsa .github/workflows/deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
-        
-        # SSH into server and run deploy script
-        ssh -i $TEMP_DIR/.ssh/id_rsa $SERVER_USER@$SERVER_IP "bash ~/.github/workflows/deploy_script.sh"
-        
-        # Clean up on the server
-        ssh -i $TEMP_DIR/.ssh/id_rsa $SERVER_USER@$SERVER_IP "rm ~/.github/workflows/deploy_script.sh"
-        
-        # Clean up the temporary directory
-        rm -rf $TEMP_DIR
+      - name: Create temporary directory
+        run: |
+          TEMP_DIR=$(mktemp -d)
+          echo "TEMP_DIR=$TEMP_DIR" >> $GITHUB_ENV
+
+      - name: Set up SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p $TEMP_DIR/.ssh
+          echo "$SSH_PRIVATE_KEY" > $TEMP_DIR/.ssh/id_rsa
+          chmod 600 $TEMP_DIR/.ssh/id_rsa
+
+      - name: Add server to known hosts
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: ssh-keyscan -H $SERVER_IP >> $TEMP_DIR/.ssh/known_hosts
+
+      - name: Copy deploy script to server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          scp -i $TEMP_DIR/.ssh/id_rsa -o UserKnownHostsFile=$TEMP_DIR/.ssh/known_hosts \
+            deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
+
+      - name: Run deploy script on server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          ssh -i $TEMP_DIR/.ssh/id_rsa -o UserKnownHostsFile=$TEMP_DIR/.ssh/known_hosts \
+            $SERVER_USER@$SERVER_IP "REPO_URL=$REPO_URL bash ~/deploy_script.sh"
+
+      - name: Clean up
+        if: always()
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh -i $TEMP_DIR/.ssh/id_rsa -o UserKnownHostsFile=$TEMP_DIR/.ssh/known_hosts \
+            $SERVER_USER@$SERVER_IP "rm ~/deploy_script.sh"
+          rm -rf $TEMP_DIR

@@ -1,7 +1,14 @@
 #!/bin/bash
 set -e
 
+echo "Starting deployment script"
+
 REPO_DIR=~/nixos-config
+
+if [ -z "$REPO_URL" ]; then
+  echo "Error: REPO_URL is not set"
+  exit 1
+fi
 
 if [ -d "$REPO_DIR" ]; then
   echo "Repository exists. Pulling latest changes..."
@@ -13,8 +20,12 @@ else
   cd "$REPO_DIR"
 fi
 
-# Ensure deploy script is executable
+echo "Ensuring deploy script is executable"
 chmod +x deploy.sh
 
-# Run deploy script
+echo "Running deploy script"
 ./deploy.sh
+
+echo "Rebuilding NixOS"
+
+echo "Deployment complete"
