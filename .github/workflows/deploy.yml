@@ -9,6 +9,9 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+
     - name: Deploy to NixOS Server
       env:
         SERVER_IP: ${{ secrets.SERVER_IP }}
@@ -22,30 +25,12 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
 
-        # SSH into server, check/clone repo, pull latest changes, and run deploy script
-        ssh $SERVER_USER@$SERVER_IP << 'EOF'
-          set -e
-          REPO_DIR=~/nixos-config
+        # Copy deploy script to server
+        scp deploy_script.sh $SERVER_USER@$SERVER_IP:~/deploy_script.sh
 
-          if [ -d "$REPO_DIR" ]; then
-            echo "Repository exists. Pulling latest changes..."
-            cd "$REPO_DIR"
-            git pull origin main
-          else
-            echo "Repository doesn't exist. Cloning..."
-            git clone $REPO_URL "$REPO_DIR"
-            cd "$REPO_DIR"
-          fi
-
-          # Ensure deploy script is executable
-          chmod +x deploy.sh
-
-          # Run deploy script
-          ./deploy.sh
-
-          # Rebuild NixOS
-          sudo nixos-rebuild switch
-EOF
+        # SSH into server and run deploy script
+        ssh $SERVER_USER@$SERVER_IP "bash ~/deploy_script.sh"
 
         # Clean up
+        ssh $SERVER_USER@$SERVER_IP "rm ~/deploy_script.sh"
         rm -f ~/.ssh/id_rsa
