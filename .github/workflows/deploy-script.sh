@@ -21,11 +21,9 @@ else
 fi
 
 echo "Ensuring deploy script is executable"
-chmod +x deploy.sh
+chmod +x ~/deploy.sh
 
 echo "Running deploy script"
-./deploy.sh
-
-echo "Rebuilding NixOS"
+~/deploy.sh
 
 echo "Deployment complete"
