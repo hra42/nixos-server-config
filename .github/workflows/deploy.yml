@@ -20,6 +20,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > $TEMP_SSH_DIR/id_rsa
           chmod 600 $TEMP_SSH_DIR/id_rsa
           echo "StrictHostKeyChecking no" > $TEMP_SSH_DIR/config
+          echo "Port 22222" >> $TEMP_SSH_DIR/config
           echo "TEMP_SSH_DIR=$TEMP_SSH_DIR" >> $GITHUB_ENV
 
       - name: Deploy to NixOS Server
