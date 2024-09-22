@@ -18,7 +18,6 @@ mkdir -p "$DEST_DIR/modules"
 
 # Copy configuration files
 cp "$SRC_DIR/configuration.nix" "$DEST_DIR/"
-cp "$SRC_DIR/hardware-configuration.nix" "$DEST_DIR/"
 
 # Copy module files
 for module in "$SRC_DIR/modules"/*.nix; do
