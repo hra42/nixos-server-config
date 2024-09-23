@@ -32,6 +32,6 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22222 ];  # Allow only the SSH port
+    allowedTCPPorts = [ 22222, 80, 443 ];  # Allow only the SSH and HTTP(S) ports
   };
 }
