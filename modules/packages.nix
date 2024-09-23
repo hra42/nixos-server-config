@@ -2,7 +2,7 @@
   environment.systemPackages = with pkgs; [
     wget
     curl
-    podman-compose
+    docker
     btop
     nano
     git
