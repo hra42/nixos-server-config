@@ -5,7 +5,6 @@ This repository contains the NixOS configuration for my server setup. It uses a 
 ## Structure
 
 - `configuration.nix`: Main configuration file that imports all modules
-- `hardware-configuration.nix`: Hardware-specific configuration (auto-generated)
 - `modules/`: Directory containing modular configuration files
   - `git.nix`: Git configuration
   - `monitoring.nix`: System monitoring setup
