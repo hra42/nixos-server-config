@@ -6,12 +6,10 @@ This repository contains the NixOS configuration for my server setup. It uses a 
 
 - `configuration.nix`: Main configuration file that imports all modules
 - `modules/`: Directory containing modular configuration files
+  - `base.nix`: Base system configuration
+  - `docker.nix`: Docker container setup
   - `git.nix`: Git configuration
-  - `monitoring.nix`: System monitoring setup
-  - `networking.nix`: Network configuration
   - `packages.nix`: System-wide package installations
-  - `podman.nix`: Podman container setup
-  - `security.nix`: Security-related configurations
   - `ssh.nix`: SSH server configuration
   - `system.nix`: General system settings
   - `users.nix`: User account configurations
@@ -19,20 +17,25 @@ This repository contains the NixOS configuration for my server setup. It uses a 
 ## Usage
 
 1. Clone this repository:
-git clone https://github.com/hra42/nixos-server-config.git
+   ```
+   git clone https://github.com/yourusername/nixos-server-config.git
+   ```
 
 2. Review and adjust the configuration files as needed.
 
 3. Deploy the configuration:
-sudo ./deploy.sh
+   ```
+   sudo ./deploy.sh
+   ```
 
 ## Key Features
 
 - Modular configuration for easy management
 - Secure SSH setup
-- Podman for containerization
-- Custom user configurations including admin user
-- Git configuration with commit signing
+- Docker for containerization
+- Custom user configurations
+- Git configuration
+- Comprehensive package management
 
 ## Customization
 
@@ -48,3 +51,11 @@ Remember to regularly update your NixOS system and this configuration:
 
 1. Pull the latest changes from this repo
 2. Run `sudo nixos-rebuild switch` to apply updates
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE.md file for details.
