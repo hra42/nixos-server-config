@@ -6,5 +6,6 @@
     btop
     nano
     git
+    ffmpeg_7-full
   ];
 }
