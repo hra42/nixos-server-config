@@ -6,7 +6,7 @@ on:
       - main # or your default branch name
 
 jobs:
-  deploy:
+  deploy-server1:
     runs-on: self-hosted
     steps:
       - name: Check out repository
@@ -55,6 +55,60 @@ jobs:
           # Clean up
           ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
             $SERVER_USER@$SERVER_IP "rm /home/$SERVER_USER/deploy-script.sh /home/$SERVER_USER/deploy.sh"
+
+      - name: Clean up
+        if: always()
+        run: rm -rf $TEMP_SSH_DIR
+
+  deploy-server2:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+        run: |
+          TEMP_SSH_DIR=$(mktemp -d)
+          echo "$SSH_PRIVATE_KEY" > $TEMP_SSH_DIR/id_rsa
+          chmod 600 $TEMP_SSH_DIR/id_rsa
+          touch $TEMP_SSH_DIR/known_hosts
+          cat << EOF > $TEMP_SSH_DIR/config
+          StrictHostKeyChecking no
+          UserKnownHostsFile $TEMP_SSH_DIR/known_hosts
+          Port 22222
+          EOF
+          echo "TEMP_SSH_DIR=$TEMP_SSH_DIR" >> $GITHUB_ENV
+
+      - name: Deploy to NixOS Server
+        env:
+          SERVER_IP2: ${{ secrets.SERVER_IP2 }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          # Ensure we're in the repository root
+          cd $GITHUB_WORKSPACE
+
+          # Convert scripts to Unix format (in case they were edited on Windows)
+          sed -i 's/\r$//' .github/workflows/deploy-script.sh
+          sed -i 's/\r$//' deploy.sh
+
+          # Copy both scripts to server
+          scp -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            .github/workflows/deploy-script.sh deploy.sh $SERVER_USER@$SERVER_IP2:/home/$SERVER_USER/
+
+          # Set execute permissions for both scripts
+          ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            $SERVER_USER@$SERVER_IP2 "chmod +x /home/$SERVER_USER/deploy-script.sh /home/$SERVER_USER/deploy.sh"
+
+          # Run deploy script on server
+          ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            $SERVER_USER@$SERVER_IP2 "REPO_URL=$REPO_URL bash /home/$SERVER_USER/deploy-script.sh"
+
+          # Clean up
+          ssh -i $TEMP_SSH_DIR/id_rsa -F $TEMP_SSH_DIR/config \
+            $SERVER_USER@$SERVER_IP2 "rm /home/$SERVER_USER/deploy-script.sh /home/$SERVER_USER/deploy.sh"
 
       - name: Clean up
         if: always()
